@@ -20,7 +20,6 @@ namespace Shop_BE.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly DataContext _context;
-
         public AuthController(IConfiguration configuration, DataContext context)
         {
             _configuration = configuration;
@@ -93,7 +92,7 @@ namespace Shop_BE.Controllers
         [Authorize]
         [Route("users")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetUsers()
+        public async Task<ActionResult<BaseResponse<IEnumerable<Customer>>>> GetUsers()
         {
             var username = User.Identity.Name;
 
@@ -108,8 +107,10 @@ namespace Shop_BE.Controllers
             {
                 return Forbid("You do not have permission to access this resource");
             }
-
-            return await _context.Customer.ToListAsync();
+            var response = new BaseResponse<IEnumerable<Customer>>();
+            response.Success = true;
+            response.Data = await _context.Customer.ToListAsync();
+            return Ok(response);
         }
     }
 }
