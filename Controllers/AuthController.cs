@@ -86,6 +86,11 @@ namespace Shop_BE.Controllers
             };
             _context.Customer.Add(newCustomer);
             await _context.SaveChangesAsync();
+            var newCart = new Cart {
+                UserId = newCustomer.Id
+            };
+            _context.Cart.AddAsync(newCart);
+            await _context.SaveChangesAsync();
             response.Success = true;
             response.Data = new CustomerResponse(newCustomer);
             return Ok(response);
