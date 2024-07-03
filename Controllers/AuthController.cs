@@ -49,8 +49,9 @@ namespace Shop_BE.Controllers
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-            new Claim(ClaimTypes.Name, customer.UserName),
-            new Claim(ClaimTypes.Role, customer.Role)
+                    new Claim("customerID", customer.Id.ToString(), ClaimValueTypes.Integer),
+                    new Claim(ClaimTypes.Name, customer.UserName),
+                    new Claim(ClaimTypes.Role, customer.Role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(1), 
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
