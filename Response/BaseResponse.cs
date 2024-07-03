@@ -1,4 +1,4 @@
-﻿namespace Shop_BE.Entities
+﻿namespace Shop_BE.Response
 {
     public class BaseResponse<T>
     {

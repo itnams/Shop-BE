@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Shop_BE.Data;
 using Shop_BE.Entities;
 using Shop_BE.Request;
+using Shop_BE.Response;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -28,9 +29,9 @@ namespace Shop_BE.Controllers
 
         [Route("login")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponse<Customer>>> Login([FromForm] LoginRequest request)
+        public async Task<ActionResult<BaseResponse<CustomerResponse>>> Login([FromForm] LoginRequest request)
         {
-            var response = new BaseResponse<Customer>();
+            var response = new BaseResponse<CustomerResponse>();
 
             var customer = await _context.Customer
                 .FirstOrDefaultAsync(item => item.UserName == request.UserName && item.Password == request.Password);
@@ -42,7 +43,6 @@ namespace Shop_BE.Controllers
                 return BadRequest(response);
             }
 
-            // Tạo và trả về JWT token
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"]); 
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -50,6 +50,7 @@ namespace Shop_BE.Controllers
                 Subject = new ClaimsIdentity(new Claim[]
                 {
             new Claim(ClaimTypes.Name, customer.UserName),
+            new Claim(ClaimTypes.Role, customer.Role)
                 }),
                 Expires = DateTime.UtcNow.AddHours(1), 
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -59,7 +60,7 @@ namespace Shop_BE.Controllers
             var tokenString = tokenHandler.WriteToken(token);
 
             response.Success = true;
-            response.Data = customer;
+            response.Data = new CustomerResponse(customer);
             response.Token = tokenString; 
 
             return Ok(response);
@@ -67,9 +68,9 @@ namespace Shop_BE.Controllers
 
         [Route("register")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponse<Customer>>> Register([FromForm] LoginRequest request)
+        public async Task<ActionResult<BaseResponse<CustomerResponse>>> Register([FromForm] LoginRequest request)
         {
-            var response = new BaseResponse<Customer>();
+            var response = new BaseResponse<CustomerResponse>();
             var existingCustomer = await _context.Customer.FirstOrDefaultAsync(c => c.UserName == request.UserName);
             if (existingCustomer != null)
             {
@@ -86,30 +87,17 @@ namespace Shop_BE.Controllers
             _context.Customer.Add(newCustomer);
             await _context.SaveChangesAsync();
             response.Success = true;
-            response.Data = newCustomer;
+            response.Data = new CustomerResponse(newCustomer);
             return Ok(response);
         }
-        [Authorize]
+        [Authorize(Roles = "Admin")]
         [Route("users")]
         [HttpGet]
-        public async Task<ActionResult<BaseResponse<IEnumerable<Customer>>>> GetUsers()
+        public async Task<ActionResult<BaseResponse<IEnumerable<CustomerResponse>>>> GetUsers()
         {
-            var username = User.Identity.Name;
-
-            var user = await _context.Customer.FirstOrDefaultAsync(u => u.UserName == username);
-
-            if (user == null)
-            {
-                return NotFound("User not found");
-            }
-
-            if (user.Role != "Admin")
-            {
-                return Forbid("You do not have permission to access this resource");
-            }
-            var response = new BaseResponse<IEnumerable<Customer>>();
+            var response = new BaseResponse<IEnumerable<CustomerResponse>>();
             response.Success = true;
-            response.Data = await _context.Customer.ToListAsync();
+            response.Data = await _context.Customer.Select(customer => new CustomerResponse(customer)).ToListAsync();
             return Ok(response);
         }
     }
