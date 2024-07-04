@@ -2,14 +2,11 @@
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Shop_BE.Data;
 using Shop_BE.Entities;
 using Shop_BE.Request;
 using Shop_BE.Response;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 
 namespace Shop_BE.Controllers
 {
@@ -52,6 +49,55 @@ namespace Shop_BE.Controllers
             }
             return Ok(response);
         }
-        
+        [Route("items")]
+        [HttpGet]
+        [Authorize]
+        public async Task<ActionResult<BaseResponse<CartResponse>>> GetItem()
+        {
+            var response = new BaseResponse<CartResponse>();
+            IEnumerable<Claim> claims = User.Claims;
+            Claim customerIDClaim = claims.FirstOrDefault(c => c.Type == "customerID");
+            if (customerIDClaim != null && int.TryParse(customerIDClaim.Value, out int customerID))
+            {
+
+                // Truy vấn sản phẩm và ảnh liên quan trước
+                var products = await _context.Products
+                    .GroupJoin(
+                        _context.ProductImages,
+                        product => product.ProductId,
+                        pi => pi.ProductId,
+                        (product, pis) => new ProductResponse(product, pis.Select(item => new ProductImageResponse(item)).ToList())
+                    )
+                    .ToListAsync();
+
+                // Chuyển đổi danh sách sản phẩm sang enumerable để sử dụng trong join
+                var productsEnumerable = products.AsEnumerable();
+
+                // Truy vấn các mục giỏ hàng và tham gia với sản phẩm
+                var cartItems =  _context.CartItems
+                    .Where(item => item.CartId == customerID)
+                    .AsEnumerable()
+                    .Join(
+                        productsEnumerable,
+                        item => item.ProductId,
+                        product => product.ProductId,
+                        (item, product) => new CartItemsResponse(item, product)
+                    )
+                    .ToList();
+
+                // Truy vấn giỏ hàng và bao gồm các mục
+                var result = await _context.Cart
+                    .Where(cart => cart.CartId == customerID)
+                    .Select(cart => new CartResponse(cart, cartItems))
+                    .FirstOrDefaultAsync();
+
+                response.Data = result;
+            }
+            else
+            {
+                return Forbid("You do not have permission to access this resource");
+            }
+            return Ok(response);
+        }
     }
 }

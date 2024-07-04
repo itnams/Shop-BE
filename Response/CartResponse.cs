@@ -7,8 +7,8 @@ namespace Shop_BE.Response
     {
         public int CartId { get; set; }
         public int UserId { get; set; }
-        public List<CartItemsResponse> Items { get; set; }
-        public CartResponse(Cart cart, List<CartItemsResponse> Items)
+        public IEnumerable<CartItemsResponse> Items { get; set; }
+        public CartResponse(Cart cart, IEnumerable<CartItemsResponse> Items)
         {
             CartId = cart.CartId;
             UserId = cart.UserId;

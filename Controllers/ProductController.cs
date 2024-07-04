@@ -122,6 +122,7 @@ namespace Shop_BE.Controllers
                 pis.Select(item => new ProductImageResponse(item)).ToList()))
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
+                .AsNoTracking()
                 .ToListAsync();
                 var response = new BaseResponse<List<ProductResponse>>();
                 response.Data = result;
