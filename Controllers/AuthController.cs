@@ -29,7 +29,7 @@ namespace Shop_BE.Controllers
 
         [Route("login")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponse<CustomerResponse>>> Login([FromForm] LoginRequest request)
+        public async Task<ActionResult<BaseResponse<CustomerResponse>>> Login(LoginRequest request)
         {
             var response = new BaseResponse<CustomerResponse>();
 
@@ -69,7 +69,7 @@ namespace Shop_BE.Controllers
 
         [Route("register")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponse<CustomerResponse>>> Register([FromForm] LoginRequest request)
+        public async Task<ActionResult<BaseResponse<CustomerResponse>>> Register(LoginRequest request)
         {
             var response = new BaseResponse<CustomerResponse>();
             var existingCustomer = await _context.Customer.FirstOrDefaultAsync(c => c.UserName == request.UserName);
@@ -85,12 +85,12 @@ namespace Shop_BE.Controllers
                 Password = request.Password,
                 Role = "Customer"
             };
-            _context.Customer.Add(newCustomer);
+            await _context.Customer.AddAsync(newCustomer);
             await _context.SaveChangesAsync();
             var newCart = new Cart {
                 UserId = newCustomer.Id
             };
-            _context.Cart.AddAsync(newCart);
+            await _context.Cart.AddAsync(newCart);
             await _context.SaveChangesAsync();
             response.Success = true;
             response.Data = new CustomerResponse(newCustomer);

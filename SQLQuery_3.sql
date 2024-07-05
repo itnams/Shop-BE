@@ -20,6 +20,7 @@ CREATE TABLE Products (
     PromotionId INT,
     CreationDate VARCHAR
 )
+
 CREATE TABLE Cart(
     CartId INT IDENTITY(1,1) PRIMARY KEY, 
     UserId INT,
@@ -35,10 +36,11 @@ CREATE TABLE CartItems(
 CREATE TABLE Orders (
     OrderId INT IDENTITY(1,1) PRIMARY KEY,
     UserId INT,
-    OrderDate VARCHAR,
+    OrderDate NVARCHAR(MAX),
     TotalAmount DECIMAL,
-    Status VARCHAR,
-    Address NVARCHAR
+    Status NVARCHAR(MAX),
+    Address NVARCHAR(MAX),
+    PaymentMethods NVARCHAR(MAX)
 )
 
 CREATE TABLE OrderDetails (
@@ -76,3 +78,6 @@ VALUES ('admin','Admin1234','Admin'),('itnams12','12345678','Customer');
 
 INSERT INTO ProductCategories(CategoryName)
 VALUES ('Túi Xách'),('Ba lô'),('Ví');
+
+INSERT INTO Cart(UserId)
+VALUES (1),(2),(3),(4);

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,7 @@ namespace Shop_BE.Controllers
         [Route("add-item")]
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<BaseResponse<bool>>> AddItem([FromForm] AddCartItemRequest request)
+        public async Task<ActionResult<BaseResponse<bool>>> AddItem(AddCartItemRequest request)
         {
             var response = new BaseResponse<bool>();
             IEnumerable<Claim> claims = User.Claims;
@@ -60,7 +61,6 @@ namespace Shop_BE.Controllers
             if (customerIDClaim != null && int.TryParse(customerIDClaim.Value, out int customerID))
             {
 
-                // Truy vấn sản phẩm và ảnh liên quan trước
                 var products = await _context.Products
                     .GroupJoin(
                         _context.ProductImages,
@@ -69,12 +69,8 @@ namespace Shop_BE.Controllers
                         (product, pis) => new ProductResponse(product, pis.Select(item => new ProductImageResponse(item)).ToList())
                     )
                     .ToListAsync();
-
-                // Chuyển đổi danh sách sản phẩm sang enumerable để sử dụng trong join
                 var productsEnumerable = products.AsEnumerable();
-
-                // Truy vấn các mục giỏ hàng và tham gia với sản phẩm
-                var cartItems =  _context.CartItems
+                var cartItems = _context.CartItems
                     .Where(item => item.CartId == customerID)
                     .AsEnumerable()
                     .Join(
@@ -84,14 +80,66 @@ namespace Shop_BE.Controllers
                         (item, product) => new CartItemsResponse(item, product)
                     )
                     .ToList();
-
-                // Truy vấn giỏ hàng và bao gồm các mục
                 var result = await _context.Cart
                     .Where(cart => cart.CartId == customerID)
                     .Select(cart => new CartResponse(cart, cartItems))
                     .FirstOrDefaultAsync();
 
                 response.Data = result;
+                response.Success = true;
+            }
+            else
+            {
+                return Forbid("You do not have permission to access this resource");
+            }
+            return Ok(response);
+        }
+        [Route("orders")]
+        [HttpPost]
+        [Authorize]
+        public async Task<ActionResult<BaseResponse<bool>>> Orders(AddOrders request)
+        {
+            var response = new BaseResponse<bool>();
+            IEnumerable<Claim> claims = User.Claims;
+            Claim customerIDClaim = claims.FirstOrDefault(c => c.Type == "customerID");
+            if (customerIDClaim != null && int.TryParse(customerIDClaim.Value, out int customerID))
+            {
+                var currentDateTime = DateTime.Now;
+                var dateTimeString = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                var order = new Orders
+                {
+                    UserId = customerID,
+                    OrderDate = dateTimeString,
+                    TotalAmount = request.TotalAmount,
+                    Status = request.Status,
+                    Address = request.Address,
+                    PaymentMethods = request.PaymentMethods
+                };
+
+                await _context.Orders.AddAsync(order);
+                await _context.SaveChangesAsync();
+
+                foreach (var cartItem in request.CartItems)
+                {
+                    var orderDetail = new OrderDetails
+                    {
+                        OrderId = order.OrderId,
+                        ProductId = cartItem.ProductId,
+                        Quantity = cartItem.Quantity,
+                        Price = cartItem.Price,
+                    };
+                    await _context.OrderDetails.AddAsync(orderDetail);
+                    await _context.SaveChangesAsync();
+
+                    var itemRemove = await _context.CartItems.Where(item => item.CartItemId == cartItem.CartItemId).FirstOrDefaultAsync();
+                    if (itemRemove != null)
+                    {
+                        _context.CartItems.Remove(itemRemove);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                response.Data = true;
             }
             else
             {

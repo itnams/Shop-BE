@@ -69,7 +69,7 @@ namespace Shop_BE.Controllers
         }
         [Route("search")]
         [HttpPost]
-        public async Task<ActionResult<BaseResponse<List<ProductResponse>>>> SearchProducts([FromForm] SearchProductRequest request, int pageSize = 10, int pageIndex = 1, string sortOrder = "asc_price")
+        public async Task<ActionResult<BaseResponse<List<ProductResponse>>>> SearchProducts(SearchProductRequest request, int pageSize = 10, int pageIndex = 1, string sortOrder = "asc_price")
         {
             try
             {
@@ -122,7 +122,6 @@ namespace Shop_BE.Controllers
                 pis.Select(item => new ProductImageResponse(item)).ToList()))
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
-                .AsNoTracking()
                 .ToListAsync();
                 var response = new BaseResponse<List<ProductResponse>>();
                 response.Data = result;
