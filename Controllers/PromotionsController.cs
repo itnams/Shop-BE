@@ -32,15 +32,13 @@ namespace Shop_BE.Controllers
             using (var memoryStream = new MemoryStream())
             {
                 await request.Image.CopyToAsync(memoryStream);
-                var base64Image = Convert.ToBase64String(memoryStream.ToArray());
-
                 var promotion = new Promotions
                 {
                     PromotionName = request.PromotionName,
                     Discount = request.Discount,
                     StartDate = request.StartDate,
                     EndDate = request.EndDate,
-                    Image = base64Image,
+                    Image = memoryStream.ToArray(),
                 };
                 await _context.Promotions.AddRangeAsync(promotion);
                 await _context.SaveChangesAsync();

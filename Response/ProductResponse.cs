@@ -32,7 +32,7 @@ namespace Shop_BE.Response
         public ProductImageResponse(ProductImages productImages)
         {
             ImageId = productImages.ImageId;
-            ImagePath = productImages.ImagePath;
+            ImagePath = Convert.ToBase64String(productImages.ImagePath);
         }
     }
 }

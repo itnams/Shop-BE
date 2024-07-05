@@ -10,7 +10,7 @@ namespace Shop_BE.Entities
         public decimal? Discount { get; set; }
         public string? StartDate { get; set; }
         public string? EndDate { get; set; }
-        public string? Image { get; set; }
+        public byte[]? Image { get; set; }
         public DateTime? StartDateTime
         {
             get

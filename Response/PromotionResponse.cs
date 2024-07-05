@@ -17,7 +17,7 @@ namespace Shop_BE.Response
             Discount = promotions.Discount;
             StartDate = promotions.StartDate;
             EndDate = promotions.EndDate;
-            Image = promotions.Image;
+            Image = Convert.ToBase64String(promotions.Image);
         }
     }
 }

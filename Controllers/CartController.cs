@@ -23,6 +23,19 @@ namespace Shop_BE.Controllers
             _configuration = configuration;
             _context = context;
         }
+        [Route("item")]
+        [HttpDelete]
+        [Authorize]
+        public async Task<ActionResult<BaseResponse<bool>>> AddItem(int CartItemId)
+        {
+            var response = new BaseResponse<bool>();
+            var cartItem = await _context.CartItems.Where(item => item.CartItemId == CartItemId).FirstOrDefaultAsync();
+            _context.CartItems.RemoveRange(cartItem);
+            await _context.SaveChangesAsync();
+            response.Data = true;
+            response.Success = true;
+            return Ok(response);
+        }
         [Route("add-item")]
         [HttpPost]
         [Authorize]
@@ -48,6 +61,19 @@ namespace Shop_BE.Controllers
             {
                 return Forbid("You do not have permission to access this resource");
             }
+            return Ok(response);
+        }
+        [Route("update-item")]
+        [HttpPut]
+        [Authorize]
+        public async Task<ActionResult<BaseResponse<bool>>> UpdateItem(UpdateCartItemRequest request)
+        {
+            var response = new BaseResponse<bool>();
+            var cartItem = await _context.CartItems.Where(p => p.CartItemId == request.CartItemId).FirstOrDefaultAsync();
+            cartItem.Quantity = request.Quantity;
+            await _context.SaveChangesAsync();
+            response.Data = true;
+            response.Success = true;
             return Ok(response);
         }
         [Route("items")]

@@ -49,12 +49,10 @@ namespace Shop_BE.Controllers
                     using (var memoryStream = new MemoryStream())
                     {
                         await image.CopyToAsync(memoryStream);
-                        var base64Image = Convert.ToBase64String(memoryStream.ToArray());
-
                         var productImage = new ProductImages
                         {
                             ProductId = product.ProductId,
-                            ImagePath = base64Image
+                            ImagePath = memoryStream.ToArray()
                         };
                         productImages.Add(productImage);
                     }
