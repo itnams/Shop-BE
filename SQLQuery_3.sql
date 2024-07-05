@@ -18,7 +18,6 @@ CREATE TABLE Products (
     OldPrice DECIMAL,
     CategoryId INT,
     PromotionId INT,
-    CreationDate VARCHAR
 )
 
 CREATE TABLE Cart(
@@ -59,10 +58,11 @@ CREATE TABLE ProductImages (
 
 CREATE TABLE Promotions (
     PromotionId INT IDENTITY(1,1) PRIMARY KEY,
-    PromotionName NVARCHAR,
+    PromotionName NVARCHAR(MAX),
     Discount DECIMAL,
-    StartDate VARCHAR,
-    EndDate VARCHAR,
+    StartDate NVARCHAR(MAX),
+    EndDate NVARCHAR(MAX),
+    Image NVARCHAR(Max)
 )
 
 CREATE TABLE Reviews (
@@ -71,8 +71,9 @@ CREATE TABLE Reviews (
     UserId Int,
     Rating Int,
     Comment NVARCHAR(255),
-    ReviewDate VARCHAR
+    ReviewDate NVARCHAR(MAX)
 )
+
 INSERT INTO Customer (UserName, Password, Role)
 VALUES ('admin','Admin1234','Admin'),('itnams12','12345678','Customer');
 

@@ -8,6 +8,7 @@ using Shop_BE.Entities;
 using Shop_BE.Request;
 using Shop_BE.Response;
 using System.Globalization;
+using System.Security.Claims;
 
 namespace Shop_BE.Controllers
 {
@@ -28,6 +29,7 @@ namespace Shop_BE.Controllers
         [Authorize(Roles ="Admin")]
         public async Task<ActionResult<BaseResponse<ProductResponse>>> AddProduct([FromForm] AddProduct request)
         {
+            var response = new BaseResponse<ProductResponse>();
             try
             {
                 var product = new Products
@@ -60,7 +62,9 @@ namespace Shop_BE.Controllers
                 await _context.ProductImages.AddRangeAsync(productImages);
                 await _context.SaveChangesAsync();
                 var resp = new ProductResponse(product, productImages.Select(pi => new ProductImageResponse(pi)).ToList());
-                return Ok(resp);
+                response.Data = resp;
+                response.Success = true;
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -136,6 +140,38 @@ namespace Shop_BE.Controllers
             {
                 return StatusCode(500, $"Internal server error: {ex}");
             }
+        }
+
+        [Route("review")]
+        [HttpPost]
+        [Authorize()]
+        public async Task<ActionResult<BaseResponse<bool>>> AddReview(AddReview request)
+        {
+            var response = new BaseResponse<bool>();
+            IEnumerable<Claim> claims = User.Claims;
+            Claim customerIDClaim = claims.FirstOrDefault(c => c.Type == "customerID");
+            if (customerIDClaim != null && int.TryParse(customerIDClaim.Value, out int customerID))
+            {
+                var currentDateTime = DateTime.Now;
+                var dateTimeString = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                var review = new Reviews
+                {
+                    ProductId = request.ProductId,
+                    Rating = request.Rating,
+                    UserId = customerID,
+                    Comment = request.Comment,
+                    ReviewDate = dateTimeString,
+                };
+                await _context.Reviews.AddRangeAsync(review);
+                await _context.SaveChangesAsync();
+                response.Data = true;
+                response.Success = true;
+            }
+            else
+            {
+                return Forbid("You do not have permission to access this resource");
+            }
+            return Ok(response);
         }
     }
 }

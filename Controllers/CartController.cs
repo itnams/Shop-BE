@@ -147,5 +147,46 @@ namespace Shop_BE.Controllers
             }
             return Ok(response);
         }
+        [Route("orders")]
+        [HttpGet]
+        [Authorize]
+        public async Task<ActionResult<BaseResponse<List<OrdersResponse>>>> GetOrders()
+        {
+            var response = new BaseResponse<List<OrdersResponse>>();
+            IEnumerable<Claim> claims = User.Claims;
+            Claim customerIDClaim = claims.FirstOrDefault(c => c.Type == "customerID");
+            if (customerIDClaim != null && int.TryParse(customerIDClaim.Value, out int customerID))
+            {
+                var products = await _context.Products
+                    .GroupJoin(
+                        _context.ProductImages,
+                        product => product.ProductId,
+                        pi => pi.ProductId,
+                        (product, pis) => new ProductResponse(product, pis.Select(item => new ProductImageResponse(item)).ToList())
+                    )
+                    .ToListAsync();
+                var productsEnumerable = products.AsEnumerable();
+                var OrderDetails = _context.OrderDetails
+                    .AsEnumerable()
+                    .Join(
+                        productsEnumerable,
+                        item => item.ProductId,
+                        product => product.ProductId,
+                        (item, product) => new OrdersDetailResponse(item, product)
+                    )
+                    .ToList();
+                var orders = _context.Orders
+                    .Where(od => od.UserId == customerID)
+                    .AsEnumerable()
+                    .GroupJoin(OrderDetails, order => order.OrderId, detail => detail.OrderId, (order, detail) => new OrdersResponse(order, detail)).ToList();
+                response.Data = orders;
+                response.Success = true;
+            }
+            else
+            {
+                return Forbid("You do not have permission to access this resource");
+            }
+            return Ok(response);
+        }
     }
 }
