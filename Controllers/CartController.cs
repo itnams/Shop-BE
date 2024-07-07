@@ -46,14 +46,22 @@ namespace Shop_BE.Controllers
             Claim customerIDClaim = claims.FirstOrDefault(c => c.Type == "customerID");
             if (customerIDClaim != null && int.TryParse(customerIDClaim.Value, out int customerID))
             {
-                var newCartItem = new CartItems
+                var cartItem = await _context.CartItems.Where(i => i.CartId == customerID && i.ProductId == request.ProductId).FirstOrDefaultAsync();
+                if(cartItem != null) {
+                    cartItem.Quantity += request.Quantity;
+                    await _context.SaveChangesAsync();
+                }
+                else
                 {
-                    CartId = customerID,
-                    ProductId = request.ProductId,
-                    Quantity = request.Quantity,
-                };
-                await _context.AddAsync(newCartItem);
-                await _context.SaveChangesAsync();
+                    var newCartItem = new CartItems
+                    {
+                        CartId = customerID,
+                        ProductId = request.ProductId,
+                        Quantity = request.Quantity,
+                    };
+                    await _context.AddAsync(newCartItem);
+                    await _context.SaveChangesAsync();
+                }
                 response.Data = true;
                 response.Success = true;
             }

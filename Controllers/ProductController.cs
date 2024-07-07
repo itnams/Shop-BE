@@ -9,6 +9,7 @@ using Shop_BE.Request;
 using Shop_BE.Response;
 using System.Globalization;
 using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Shop_BE.Controllers
 {
@@ -171,5 +172,42 @@ namespace Shop_BE.Controllers
             }
             return Ok(response);
         }
+        [HttpGet("review/{productId}")]
+        public async Task<ActionResult<BaseResponse<List<ReviewResponse>>>> GetReview(int productId)
+        {
+            var response = new BaseResponse<List<ReviewResponse>>();
+            var result = await _context.Reviews
+                .Where(rv=> rv.ProductId == productId)
+                .Join(_context.Customer, rv=> rv.UserId, cs => cs.Id,(rv,cs)=> new ReviewResponse(rv, new CustomerResponse(cs)))
+                .ToListAsync();
+                response.Data = result;
+                response.Success = true;
+            return Ok(response);
+        }
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BaseResponse<ProductResponse>>> ProductDetail(int id)
+        {
+            var response = new BaseResponse<ProductResponse>();
+            IQueryable<Products> query = _context.Products;
+            var result = await query
+                .Where(p=> p.ProductId == id)
+                .GroupJoin(_context.ProductImages,
+                product => product.ProductId,
+                pi => pi.ProductId,
+                (product, pis) => new ProductResponse(product,
+                pis.Select(item => new ProductImageResponse(item)).ToList()))
+                .FirstOrDefaultAsync();
+            if (result == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                response.Data = result;
+                response.Success = true;
+            }
+            return Ok(response);
+        }
+
     }
 }
