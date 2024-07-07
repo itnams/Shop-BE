@@ -77,7 +77,6 @@ namespace Shop_BE.Controllers
             try
             {
                 var totalItems = await _context.Products.CountAsync();
-                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
                 IQueryable<Products> query = _context.Products;
 
                 switch (sortOrder.ToLower())
@@ -129,7 +128,7 @@ namespace Shop_BE.Controllers
                 var response = new BaseResponse<List<ProductResponse>>();
                 response.Data = result;
                 response.Success = true;
-                if (pageIndex < totalPages)
+                if (pageSize == result.Count)
                 {
                     response.NextLink = "/products/search?pageSize=" + pageSize + "&pageIndex=" + (pageIndex + 1) + "&pageIndex=" + sortOrder;
                 }
