@@ -3,6 +3,8 @@
     public class AddOrders {
         public decimal TotalAmount { get; set; }
         public string Status { get; set; }
+        public string Phone { get; set; }
+
         public string Address { get; set; }
         public string PaymentMethods { get; set; }
         public List<CartItem> CartItems { get; set; }

@@ -144,6 +144,7 @@ namespace Shop_BE.Controllers
                 {
                     UserId = customerID,
                     OrderDate = dateTimeString,
+                    Phone = request.Phone,
                     TotalAmount = request.TotalAmount,
                     Status = request.Status,
                     Address = request.Address,

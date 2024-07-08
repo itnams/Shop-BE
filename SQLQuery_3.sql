@@ -39,9 +39,9 @@ CREATE TABLE Orders (
     TotalAmount DECIMAL,
     Status NVARCHAR(MAX),
     Address NVARCHAR(MAX),
-    PaymentMethods NVARCHAR(MAX)
+    PaymentMethods NVARCHAR(MAX),
+    Phone NVARCHAR(MAX)
 )
-
 CREATE TABLE OrderDetails (
     OrderDetailId INT IDENTITY(1,1) PRIMARY KEY,
     OrderId INT,
@@ -53,9 +53,8 @@ CREATE TABLE OrderDetails (
 CREATE TABLE ProductImages (
     ImageId INT IDENTITY(1,1) PRIMARY KEY,
     ProductId INT,
-    ImagePath VARCHAR(MAX)
+    ImagePath VARBINARY(MAX)
 )
-
 CREATE TABLE Promotions (
     PromotionId INT IDENTITY(1,1) PRIMARY KEY,
     PromotionName NVARCHAR(MAX),

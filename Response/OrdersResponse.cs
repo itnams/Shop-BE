@@ -10,6 +10,7 @@ namespace Shop_BE.Response
         public decimal TotalAmount { get; set; }
         public string? Status { get; set; }
         public string? Address { get; set; }
+        public string? Phone { get; set; }
         public string? PaymentMethods { get; set; }
         public IEnumerable<OrdersDetailResponse> Items { get; set; }
         public OrdersResponse(Orders orders, IEnumerable<OrdersDetailResponse> items)
@@ -21,6 +22,7 @@ namespace Shop_BE.Response
             Status = orders.Status;
             Address = orders.Address;
             PaymentMethods = orders.PaymentMethods;
+            Phone = orders.Phone;
             Items = items;
         }
     }
