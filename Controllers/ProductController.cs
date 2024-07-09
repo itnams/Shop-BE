@@ -131,7 +131,7 @@ namespace Shop_BE.Controllers
                 response.Total = totalItems;
                 if (pageSize == result.Count)
                 {
-                    response.NextLink = "/products/search?pageSize=" + pageSize + "&pageIndex=" + (pageIndex + 1) + "&pageIndex=" + sortOrder;
+                    response.NextLink = "/products/search?pageSize=" + pageSize + "&pageIndex=" + (pageIndex + 1) + "&sortOrder=" + sortOrder;
                 }
                 return Ok(response);
             }

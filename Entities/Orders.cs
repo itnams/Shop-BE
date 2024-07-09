@@ -13,5 +13,6 @@ namespace Shop_BE.Entities
         public string? Phone { get; set; }
         public string? Address { get; set; }
         public string? PaymentMethods { get; set; }
+        public string? PaymentId { get; set; }
     }
 }

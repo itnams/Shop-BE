@@ -146,6 +146,7 @@ namespace Shop_BE.Controllers
             {
                 var currentDateTime = DateTime.Now;
                 var dateTimeString = currentDateTime.ToString("yyyy-MM-dd HH:mm:ss");
+                var paymentId = GenerateRandomString(9);
                 var order = new Orders
                 {
                     UserId = customerID,
@@ -154,12 +155,12 @@ namespace Shop_BE.Controllers
                     TotalAmount = request.TotalAmount,
                     Status = request.Status,
                     Address = request.Address,
-                    PaymentMethods = request.PaymentMethods
+                    PaymentMethods = request.PaymentMethods,
+                    PaymentId = paymentId
                 };
 
                 await _context.Orders.AddAsync(order);
                 await _context.SaveChangesAsync();
-
                 foreach (var cartItem in request.CartItems)
                 {
                     var orderDetail = new OrderDetails
@@ -179,7 +180,11 @@ namespace Shop_BE.Controllers
                         await _context.SaveChangesAsync();
                     }
                 }
-                var paymentLink = await CreatePaymentLink(order);
+                var paymentLink = "";
+                if (request.PaymentMethods.Contains("Momo"))
+                {
+                    paymentLink = await CreatePaymentLink(order, paymentId);
+                }
                 response.Data = paymentLink;
                 response.Success = true;
             }
@@ -230,18 +235,139 @@ namespace Shop_BE.Controllers
             }
             return Ok(response);
         }
-
-
-        private async Task<string> CreatePaymentLink(Orders request)
+        [HttpGet("completar-order/{orderId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<BaseResponse<bool>>> CompletarOrders(int orderId)
+        {
+            var response = new BaseResponse<bool>();
+            var order = await _context.Orders.Where(od=>od.OrderId == orderId).FirstOrDefaultAsync();
+            if (order != null)
+            {
+                order.Status = "Đã giao";
+                await _context.SaveChangesAsync();
+                response.Success = true;
+                response.Data = true;
+            } else
+            {
+                return NotFound();
+            }
+            return Ok(response);
+        }
+        [HttpGet("payment-success/{paymentId}")]
+        public async Task<ActionResult<BaseResponse<bool>>> PaymentSuccess(string paymentId)
+        {
+            var response = new BaseResponse<bool>();
+            var order = await _context.Orders.Where(od => od.PaymentId == paymentId).FirstOrDefaultAsync();
+            if (order != null)
+            {
+                order.PaymentMethods = "Đã thanh toán qua Momo";
+                await _context.SaveChangesAsync();
+                response.Success = true;
+                response.Data = true;
+            }
+            else
+            {
+                return NotFound();
+            }
+            return Ok(response);
+        }
+        [HttpGet("payment-faild/{paymentId}")]
+        public async Task<ActionResult<BaseResponse<bool>>> PaymentFaild(string paymentId)
+        {
+            var response = new BaseResponse<bool>();
+            var order = await _context.Orders.Where(od => od.PaymentId == paymentId).FirstOrDefaultAsync();
+            if (order != null)
+            {
+                order.PaymentMethods = "Thanh toán thất bại";
+                order.Status = "Huỷ đơn";
+                await _context.SaveChangesAsync();
+                response.Success = true;
+                response.Data = true;
+            }
+            else
+            {
+                return NotFound();
+            }
+            return Ok(response);
+        }
+        [Route("orders-search")]
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<BaseResponse<List<OrdersResponse>>>> SearchOrders(SearchOrdersRequest request, int pageSize = 10, int pageIndex = 1)
+        {
+            var response = new BaseResponse<List<OrdersResponse>>();
+            IEnumerable<Claim> claims = User.Claims;
+            var products = await _context.Products
+                .GroupJoin(
+                    _context.ProductImages,
+                    product => product.ProductId,
+                    pi => pi.ProductId,
+                    (product, pis) => new ProductResponse(product, pis.Select(item => new ProductImageResponse(item)).ToList())
+                )
+                .ToListAsync();
+            var productsEnumerable = products.AsEnumerable();
+            var OrderDetails = _context.OrderDetails
+                .AsEnumerable()
+                .Join(
+                    productsEnumerable,
+                    item => item.ProductId,
+                    product => product.ProductId,
+                    (item, product) => new OrdersDetailResponse(item, product)
+                )
+                .ToList();
+            IQueryable<Orders> query = _context.Orders;
+            /*if (!string.IsNullOrEmpty(request.))
+            {
+                query = query.Where(p => p.ProductName.Contains(request.ProductName));
+            }*/
+            if (request.OrderId != null)
+            {
+                query = query.Where(o => o.OrderId == request.OrderId);
+            }
+            if (!string.IsNullOrEmpty(request.OrderDate))
+            {
+                query = query.Where(o => o.OrderDate == request.OrderDate);
+            }
+            if (!string.IsNullOrEmpty(request.Status))
+            {
+                query = query.Where(o => o.Status == request.Status);
+            }
+            if (!string.IsNullOrEmpty(request.Phone))
+            {
+                query = query.Where(o => o.Phone == request.Phone);
+            }
+            if (!string.IsNullOrEmpty(request.Address))
+            {
+                query = query.Where(o => o.Phone == request.Address);
+            }
+            if (!string.IsNullOrEmpty(request.Address))
+            {
+                query = query.Where(o => o.PaymentMethods == request.PaymentMethods);
+            }
+            var orders = query
+                .AsEnumerable()
+                 .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .GroupJoin(OrderDetails, order => order.OrderId, detail => detail.OrderId, (order, detail) => new OrdersResponse(order, detail))
+                .ToList();
+            if (pageSize == orders.Count)
+            {
+                response.NextLink = "/products/search?pageSize=" + pageSize + "&pageIndex=" + (pageIndex + 1);
+            }
+            response.Data = orders;
+            response.Success = true;
+            return Ok(response);
+        }
+        private async Task<string> CreatePaymentLink(Orders request, string paymentId)
         {
             string partnerCode = "MOMOBKUN20180529";
             string accessKey = "klm05TvNBzhg7h7j";
             string secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
-            string orderId = GenerateRandomString(10);
+            string orderId = paymentId;
             string orderInfo = "Thanh toán qua MoMo cho đơn hàng " + request.OrderId;
             string amount = request.TotalAmount + "";
-            string ipnUrl = "http://localhost:4200/ipn-payment-success/";
-            string redirectUrl = "http://localhost:4200/payment-success/" + request.OrderId;
+            string ipnUrl = "http://localhost:4200/payment-faild/" + paymentId;
+            string redirectUrl = "http://localhost:4200/payment-success/" + paymentId;
             string extraData = "";
 
             string requestId = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();

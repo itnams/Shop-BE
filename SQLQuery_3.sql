@@ -40,7 +40,8 @@ CREATE TABLE Orders (
     Status NVARCHAR(MAX),
     Address NVARCHAR(MAX),
     PaymentMethods NVARCHAR(MAX),
-    Phone NVARCHAR(MAX)
+    Phone NVARCHAR(MAX),
+    PaymentId VARCHAR(255)
 )
 CREATE TABLE OrderDetails (
     OrderDetailId INT IDENTITY(1,1) PRIMARY KEY,
