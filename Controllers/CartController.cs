@@ -244,6 +244,10 @@ namespace Shop_BE.Controllers
             if (order != null)
             {
                 order.Status = "Đã giao";
+                if(order.PaymentMethods != "Đã thanh toán qua Momo")
+                {
+                    order.PaymentMethods = "Thanh toán thành công";
+                }
                 await _context.SaveChangesAsync();
                 response.Success = true;
                 response.Data = true;
@@ -316,10 +320,6 @@ namespace Shop_BE.Controllers
                 )
                 .ToList();
             IQueryable<Orders> query = _context.Orders;
-            /*if (!string.IsNullOrEmpty(request.))
-            {
-                query = query.Where(p => p.ProductName.Contains(request.ProductName));
-            }*/
             if (request.OrderId != null)
             {
                 query = query.Where(o => o.OrderId == request.OrderId);
@@ -338,9 +338,9 @@ namespace Shop_BE.Controllers
             }
             if (!string.IsNullOrEmpty(request.Address))
             {
-                query = query.Where(o => o.Phone == request.Address);
+                query = query.Where(o => o.Address == request.Address);
             }
-            if (!string.IsNullOrEmpty(request.Address))
+            if (!string.IsNullOrEmpty(request.PaymentMethods))
             {
                 query = query.Where(o => o.PaymentMethods == request.PaymentMethods);
             }
@@ -352,7 +352,7 @@ namespace Shop_BE.Controllers
                 .ToList();
             if (pageSize == orders.Count)
             {
-                response.NextLink = "/products/search?pageSize=" + pageSize + "&pageIndex=" + (pageIndex + 1);
+                response.NextLink = "/cart/orders-search?pageSize=" + pageSize + "&pageIndex=" + (pageIndex + 1);
             }
             response.Data = orders;
             response.Success = true;
