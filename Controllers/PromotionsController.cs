@@ -59,18 +59,37 @@ namespace Shop_BE.Controllers
             response.Success = true;
             return Ok(response);
         }
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<BaseResponse<bool>>> DeletePromotionAll(int id)
+        {
+            var response = new BaseResponse<bool>();
+            var result = await _context.Promotions.Where(item=> item.PromotionId == id).FirstOrDefaultAsync();
+            if (result != null)
+            {
+                _context.Promotions.RemoveRange(result);
+                await _context.SaveChangesAsync();
+                response.Data = true;
+                response.Success = true;
+            }
+          
+            return Ok(response);
+        }
         [Route("still-valid")]
         [HttpGet]
         public async Task<ActionResult<BaseResponse<List<PromotionResponse>>>> GetPromotionStillValid()
         {
             var response = new BaseResponse<List<PromotionResponse>>();
             var currentDateTime = DateTime.Now;
-            var result = await _context.Promotions
-            .Where(p => p.StartDateTime.HasValue && p.EndDateTime.HasValue
-                        && currentDateTime >= p.StartDateTime.Value
-                        && currentDateTime <= p.EndDateTime.Value)
-            .Select(item => new PromotionResponse(item))
-            .ToListAsync();
+
+            var result = _context.Promotions
+                .AsEnumerable()
+                .Where(p => p.StartDateTime.HasValue && p.EndDateTime.HasValue
+                            && currentDateTime >= p.StartDateTime.Value
+                            && currentDateTime <= p.EndDateTime.Value)
+                .Select(item => new PromotionResponse(item))
+                .ToList();
+
             response.Data = result;
             response.Success = true;
             return Ok(response);

@@ -62,7 +62,7 @@ CREATE TABLE Promotions (
     Discount DECIMAL,
     StartDate NVARCHAR(MAX),
     EndDate NVARCHAR(MAX),
-    Image NVARCHAR(Max)
+    Image VARBINARY(Max)
 )
 
 CREATE TABLE Reviews (

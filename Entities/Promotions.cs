@@ -15,7 +15,7 @@ namespace Shop_BE.Entities
         {
             get
             {
-                return DateTime.TryParseExact(StartDate, "yyyy-MM-dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out DateTime tempDate) ? tempDate : (DateTime?)null;
+                return DateTime.TryParseExact(StartDate, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out DateTime tempDate) ? tempDate : (DateTime?)null;
             }
         }
 
@@ -23,7 +23,7 @@ namespace Shop_BE.Entities
         {
             get
             {
-                return DateTime.TryParseExact(EndDate, "yyyy-MM-dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out DateTime tempDate) ? tempDate : (DateTime?)null;
+                return DateTime.TryParseExact(EndDate, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out DateTime tempDate) ? tempDate : (DateTime?)null;
             }
         }
     }
